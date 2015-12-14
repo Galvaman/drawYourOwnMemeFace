@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+
+<html>
+ <head>
+	<title>Meme-ify</title>
+	<script>
+	 var canvas;
+	 var context;
+	 //positioning x and y
+     var posx;
+     var posy;
+     var download;
+     var data;
+     var fileInput;
+     var img;
+	 
+	 //This code is basically the meme generator that we were shown a few weeks ago
+	 //very little has been changed here.
+
+	window.onload = function() {
+		startGenerator();
+    }
+    function startGenerator() {
+		canvas = document.getElementById('canvas');
+		context = canvas.getContext('2d');		
+		img = new Image();
+		//img.setAttribute('crossOrigin', 'anonymous');
+		img.src = 'test.jpg';
+		
+	img = new Image();
+	img.src = 'test.jpg';
+
+		var deviceWidth = window.innerWidth;;
+		canvas.width = Math.min(600, deviceWidth-20);
+		canvas.height = Math.min(480, deviceWidth-20);
+
+//calling image var onload function
+//where the image will be laid out
+
+		img.onload = function() {
+			posx = canvas.width/2 - img.width/2;
+			posy = canvas.height/2 - img.height/2;
+			//a debug alert
+			alert('draw');
+			//draws image and coordinance
+			context.drawImage(img, posx, posy);		
+		}
+    //put after img.onload or else image will load on top of text
+		context.textAlign = 'center';
+		context.lineWidth  = 4;
+		context.font = '20pt impact';
+		context.strokeStyle = 'black';
+		context.fillStyle = 'white';
+		doTransform();
+	  
+
+		fileInput = document.getElementById('fileInput');
+
+		fileInput.addEventListener('change', function(e) {
+			var reader = new FileReader();
+			reader.onload = function(event){
+				img.onload = function(){
+					context.clearRect(0, 0, canvas.width, canvas.height);
+					document.getElementById('scale').value = 1;
+					document.getElementById('rotate').value = 0;
+					posx = canvas.width/2 - img.width/2;
+					posy = canvas.height/2 - img.height/2;
+					context.drawImage(img,posx,posy);
+						//imgTransform();
+					}
+					img.src = reader.result;
+				}
+				reader.readAsDataURL(fileInput.files[0]);     
+			}, false);
+
+			var controls = document.getElementById('controls');
+			scale = document.getElementById('scale');
+			scale.addEventListener('change', doTransform, false);
+
+			rotate = document.getElementById('rotate');
+			rotate.addEventListener('change', doTransform, false);
+
+			download = document.getElementById('img-download');
+			download.addEventListener('click', prepareDownload, false);
+
+			context.textAlign = 'center';
+			context.lineWidth  = 4;
+			context.font = '20pt impact';
+			context.strokeStyle = 'black';
+			context.fillStyle = 'white';
+	  }
+
+	  function doTransform() {
+		context.save();
+		context.clearRect(0, 0, canvas.width, canvas.height);
+
+		// Translate to center so transformations will apply around this point
+		context.translate(canvas.width/2, canvas.height/2);
+
+		// Perform scale
+		var val = document.getElementById('scale').value;
+		context.scale(val,val);
+
+		// Perform rotation
+		val = document.getElementById('rotate').value;
+		context.rotate(val*Math.PI/180);
+
+		// Reverse the earlier translation
+		context.translate(-canvas.width/2, -canvas.height/2);
+
+		// Finally, draw the image
+		context.drawImage(img, posx, posy);
+
+		context.restore();
+
+		text = document.getElementById('custom-text').value;
+		 text = text.toUpperCase();
+		  //context.strokeText(text, canvas.width/2 , canvas.height - canvas.height/4 );
+		 //context.fillText(text, canvas.width/2 , canvas.height - canvas.height/4 );
+		wrapText(context, text, canvas.width/2, canvas.height - canvas.height/4.5, canvas.width-canvas.width/3, 30);
+		// var length = context.measureText(text);
+		// posx = canvas.width/2;// - length/2;
+		// posy = canvas.height - canvas.height/4.5;
+		// context.strokeText(text, posx, posy);
+		// context.fillText(text, posx, posy);
+  }
+  function prepareDownload() {
+		var data = canvas.toDataURL();
+		download.href = data;
+		download.download = 'canvas.png';
+  }
+
+  // Modified from http://www.html5canvastutorials.com/tutorials/html5-canvas-wrap-text-tutorial/
+  //make note of this shit its good shit. wraps text and shit
+  function wrapText(context, text, posx, posy, maxWidth, lineHeight) {
+		var words = text.split(' ');
+		var line = '';
+
+		for(var n = 0; n < words.length; n++) {
+		  var testLine = line + words[n] + ' ';
+		  var metrics = context.measureText(testLine);
+		  var testWidth = metrics.width;
+		  if (testWidth > maxWidth && n > 0) {
+			context.strokeText(line, posx, posy);
+			context.fillText(line, posx, posy);
+			line = words[n] + ' ';
+			posy += lineHeight;
+		  }
+		  else {
+			line = testLine;
+		  }
+		} 
+		context.strokeText(line, posx, posy);
+		context.fillText(line, posx, posy);
+  }
+
+	</script>
+</head>
+ <canvas id="canvas" width="500" height="500" style="border:1px dashed grey"></canvas><br />
+  <span id="controls">
+  //slider bar range and stuff
+    Scale&nbsp;<input id='scale' type='range' min='0.05' max='4' value='1' step='0.01' style="width:40%"/>
+	//adds the text
+    <input type='text' id='custom-text' value='Draw your meme!' onkeyup='doTransform()' oninput='doTransform' onpaste='doTransform' style="width:80%"/><br />
+    <span style="width:50%;float:left">Load image: <input type="file" id="fileInput" name="imageLoader" /></span>
+
+</p>
+  <img src='test.jpg' style='display:none' class='mfnotransform' id='default-image'/>
+
+ 
+
+ <!DOCTYPE html>
+<html>
+  <head>
+    <title>draw your meme</title>
+    <script>
+	
+	//I owe a lot of this section to the drawing code we went over week 14
+	//I laso found a tutorial by William Malone that showed me how to implement colors and switch between them.
+	
+	var canvas;
+	var can;
+	var context;
+	var ctx;
+	var flag = false
+	var lastPt=null;
+	var beginX = 0;
+	var endX = 0;
+	var beginY = 0;
+	var endY = 0;
+	dot_flag = false;
+	var x = "black";
+	y = 2;
+	 var posx;
+     var posy;
+     var download;
+     var data;
+     var fileInput;
+     var img;
+ //canvas and mouse moving functions
+      function init() {
+	  
+        canvas = document.getElementById('mycanvas');
+        ctx = canvas.getContext('2d');
+		w = canvas.width;
+		h = canvas.height;
+		canvas.addEventListener("mousemove", function (e) {
+			findxy('move', e)
+		}, false);
+		canvas.addEventListener("mousedown", function (e) {
+			findxy('down', e)
+		}, false);
+		canvas.addEventListener("mouseup", function (e) {
+			findxy('up', e)
+		}, false);
+		canvas.addEventListener("mouseout", function (e) {
+			findxy('out', e)
+		}, false);
+		
+      }
+	  //switches between the colors when they are clicked
+function color(obj) {
+    switch (obj.id) {
+        case "green":
+            x = "green";
+            break;
+        case "blue":
+            x = "blue";
+            break;
+        case "red":
+            x = "red";
+            break;
+        case "yellow":
+            x = "yellow";
+            break;
+        case "orange":
+            x = "orange";
+            break;
+        case "black":
+            x = "black";
+            break;
+        case "white":
+            x = "white";
+            break;
+    }
+    if (x == "white") y = 14;
+    else y = 2;
+}
+ //makes the lines
+      function draw(e) {
+    ctx.beginPath();
+    ctx.moveTo(beginX, beginY);
+    ctx.lineTo(endX, endY);
+    ctx.strokeStyle = x;
+    ctx.lineWidth = y;
+    ctx.stroke();
+    ctx.closePath();
+}
+
+function findxy(res, e) {
+    if (res == 'down') {
+        beginX = endX;
+        beginY = endY;
+        endX = e.clientX - canvas.offsetLeft;
+        endY = e.clientY - canvas.offsetTop;
+        flag = true;
+        dot_flag = true;
+        if (dot_flag) {
+            ctx.beginPath();
+            ctx.fillStyle = x;
+            ctx.fillRect(endX, endY, 2, 2);
+            ctx.closePath();
+            dot_flag = false;
+        }
+    }
+    if (res == 'up' || res == "out") {
+        flag = false;
+    }
+    if (res == 'move') {
+        if (flag) {
+            beginX = endX;
+            beginY = endY;
+            endX = e.clientX - canvas.offsetLeft;
+            endY = e.clientY - canvas.offsetTop;
+            draw();
+        }
+    }
+}
+	  
+    </script>
+  </head>
+  <body onload='init()'>
+	<canvas id="mycanvas" width="600" height="480" style="position:absolute;top:1%;left:1%;"></canvas>
+    <div style="position:absolute;top:12%;left:43%;">Choose Color</div>
+    <div style="position:absolute;top:15%;left:45%;width:10px;height:10px;background:green;" id="green" onclick="color(this)"></div>
+    <div style="position:absolute;top:15%;left:46%;width:10px;height:10px;background:blue;" id="blue" onclick="color(this)"></div>
+    <div style="position:absolute;top:15%;left:47%;width:10px;height:10px;background:red;" id="red" onclick="color(this)"></div>
+    <div style="position:absolute;top:17%;left:45%;width:10px;height:10px;background:yellow;" id="yellow" onclick="color(this)"></div>
+    <div style="position:absolute;top:17%;left:46%;width:10px;height:10px;background:orange;" id="orange" onclick="color(this)"></div>
+    <div style="position:absolute;top:17%;left:47%;width:10px;height:10px;background:black;" id="black" onclick="color(this)"></div>
+    <div style="position:absolute;top:20%;left:43%;">Eraser</div>
+    <div style="position:absolute;top:22%;left:45%;width:15px;height:10px;background:white;border:1px solid;" id="white" onclick="color(this)"></div>
+    <img id="canvasimg" style="position:absolute;top:10%;left:52%;" style="display:none;">
+</body>
+</html>
+ 
